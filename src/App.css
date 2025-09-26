@@ -1,0 +1,23 @@
+/* Estilos generales */
+body { font-family: system-ui, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; }
+.dashboard { max-width: 1200px; margin: 0 auto; padding: 20px; }
+header h1 { text-align: center; color: #2c3e50; }
+
+/* Tarjeta de NPS */
+.nps-display { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; padding: 20px; margin-bottom: 30px; }
+.nps-display h2 { margin-top: 0; }
+.nps-display .score { font-size: 4rem; font-weight: bold; margin: 0; }
+.nps-display .score.good { color: #2ecc71; }
+.nps-display .score.medium { color: #f39c12; }
+.nps-display .score.bad { color: #e74c3c; }
+
+/* Contenedores */
+.chart-container, .comments-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
+
+/* Lista de comentarios */
+.comments-container ul { list-style: none; padding: 0; }
+.comments-container li { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; align-items: flex-start; gap: 15px; }
+.comments-container li:last-child { border-bottom: none; }
+.comment-score { font-size: 1.5rem; font-weight: bold; background: #eee; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+.comments-container p { margin: 0; }
+.comments-container small { color: #777; }
