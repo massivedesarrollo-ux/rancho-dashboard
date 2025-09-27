@@ -46,10 +46,37 @@ header h1 { text-align: center; color: #2c3e50; }
 .comment-score { font-size: 1.5rem; font-weight: bold; background: #eee; border-radius: 50%; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
 .comments-container p { margin: 0; }
 .comments-container small { color: #777; }
-.filters { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
-.filters button { padding: 10px 20px; border-radius: 20px; border: 1px solid #ccc; background-color: #fff; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
-.filters button:hover { background-color: #f0f0f0; border-color: #aaa; }
-.filters button.active { background-color: #007bff; color: white; border-color: #007bff; }
+/* --- Estilos para los Nuevos Filtros --- */
+.filters {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+  align-items: flex-end;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-item label {
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.filter-item select,
+.filter-item .react-datepicker__input-container input {
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
 /* --- Estilos para los Nuevos Gráficos de Tendencias --- */
 .charts-grid {
   display: grid;

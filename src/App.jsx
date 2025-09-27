@@ -3,7 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { Bar, Line, Radar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, RadialLinearScale, Filler } from 'chart.js';
 import WordCloud from 'react-d3-cloud';
-import { format, getWeek, getYear } from 'date-fns';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { format, getWeek, getYear, subDays } from 'date-fns';
 import './App.css';
 
 // Registramos todos los componentes necesarios para todos los gráficos
@@ -26,6 +28,8 @@ function App() {
   const [locations, setLocations] = useState([]);
   const [locationFilter, setLocationFilter] = useState('Todos');
   const [groupBy, setGroupBy] = useState('day');
+  const [dateRange, setDateRange] = useState([subDays(new Date(), 30), new Date()]);
+  const [startDate, endDate] = dateRange || [null, null];
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -46,9 +50,12 @@ function App() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const filteredSurveys = locationFilter === 'Todos' 
-    ? allSurveys 
-    : allSurveys.filter(s => s.location_id === locationFilter);
+  const filteredSurveys = allSurveys.filter(survey => {
+    const surveyDate = new Date(survey.created_at);
+    const isLocationMatch = locationFilter === 'Todos' || survey.location_id === locationFilter;
+    const isDateMatch = !startDate || !endDate || (surveyDate >= startDate && surveyDate <= endDate);
+    return isLocationMatch && isDateMatch;
+  });
 
   // --- Cálculos para KPIs ---
   const total = filteredSurveys.length;
@@ -91,7 +98,11 @@ function App() {
     labels: locations.map(loc => loc.name),
     datasets: [{
       label: 'NPS',
-      data: locations.map(loc => calculateNps(allSurveys.filter(s => s.location_id === loc.name))),
+      data: locations.map(loc => calculateNps(allSurveys.filter(s => {
+        const surveyDate = new Date(s.created_at);
+        const isDateMatch = !startDate || !endDate || (surveyDate >= startDate && surveyDate <= endDate);
+        return s.location_id === loc.name && isDateMatch;
+      }))),
       backgroundColor: '#34495e'
     }]
   };
@@ -147,12 +158,28 @@ function App() {
       <header><h1>Dashboard de Experiencia del Cliente</h1></header>
       
       <div className="filters">
-        <button onClick={() => setLocationFilter('Todos')} className={locationFilter === 'Todos' ? 'active' : ''}>Todos</button>
-        {locations.map(location => (
-          <button key={location.id} className={locationFilter === location.name ? 'active' : ''} onClick={() => setLocationFilter(location.name)}>
-            {location.name}
-          </button>
-        ))}
+        <div className="filter-item">
+          <label>Espacio</label>
+          <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
+            <option value="Todos">Todos los Espacios</option>
+            {locations.map(location => (
+              <option key={location.id} value={location.name}>
+                {location.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-item">
+          <label>Rango de Fecha</label>
+          <DatePicker
+            selectsRange={true}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(update) => setDateRange(update)}
+            isClearable={true}
+            dateFormat="dd/MM/yyyy"
+          />
+        </div>
       </div>
 
       <div className="kpi-info"><p>Mostrando <strong>{total}</strong> encuestas</p></div>
