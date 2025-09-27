@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-// La importación corregida está aquí:
 import { Box, Container, VStack, HStack, Text, Stat, SimpleGrid, Select, Button, Heading } from '@chakra-ui/react';
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, BarController, LineController } from 'chart.js';
@@ -16,8 +15,6 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- COMPONENTES ---
-
-// El componente KpiCard corregido está aquí:
 const KpiCard = ({ title, value, unit = '' }) => (
   <Stat p="4" borderWidth="1px" borderRadius="lg" bg="white">
     <Text fontSize="sm" color="gray.500">{title}</Text>
@@ -47,7 +44,9 @@ function App() {
   const [locationFilter, setLocationFilter] = useState('Todos');
   const [dateRange, setDateRange] = useState([subDays(new Date(), 30), new Date()]);
   const [groupBy, setGroupBy] = useState('day');
-  const [startDate, endDate] = dateRange;
+
+  // ***** LA CORRECCIÓN ESTÁ EN LA LÍNEA SIGUIENTE *****
+  const [startDate, endDate] = dateRange || [null, null]; // Se añade '|| [null, null]' para evitar el error si dateRange es nulo.
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -169,7 +168,6 @@ function App() {
   );
 }
 
-// Pequeño helper para el cálculo del NPS
 function calculateNps(data) {
   if (!data || data.length === 0) return 0;
   const promoters = data.filter(s => s.score >= 9).length;
