@@ -150,7 +150,7 @@ function App() {
             <KpiCard title="% Detractores" value={total > 0 ? ((detractors / total) * 100).toFixed(1) : 0} unit="%" />
             <KpiCard title="Total Encuestas" value={total} />
           </SimpleGrid>
-
+          {/*
           <Box bg="white" p="4" borderRadius="lg" borderWidth="1px">
             <HStack mb="4">
               <Heading as="h3" size="md" flexGrow="1">Análisis de NPS en el Tiempo</Heading>
@@ -162,6 +162,7 @@ function App() {
             </HStack>
             <Chart type='bar' data={chartData} options={chartOptions} />
           </Box>
+          */}
         </VStack>
       </Container>
     </Box>
