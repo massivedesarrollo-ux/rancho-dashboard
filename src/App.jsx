@@ -1,40 +1,32 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Box, Container, VStack, HStack, Text, Stat, SimpleGrid, Select, Button, Heading } from '@chakra-ui/react';
-import { Chart } from 'react-chartjs-2';;
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, BarController, LineController } from 'chart.js';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { subDays, format } from 'date-fns';
 import * as XLSX from 'xlsx';
 
 // --- CONFIGURACIÓN ---
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, BarController, LineController);
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// --- COMPONENTES ---
+// --- LÓGICA DE DATOS Y COMPONENTES ---
+
 const KpiCard = ({ title, value, unit = '' }) => (
-  <Stat p="4" borderWidth="1px" borderRadius="lg" bg="white">
+  <Stat p="4" borderWidth="1px" borderRadius="lg" bg="white" boxShadow="sm">
     <Text fontSize="sm" color="gray.500">{title}</Text>
     <Text fontSize="2xl" fontWeight="bold">{value}{unit}</Text>
   </Stat>
 );
 
-// --- LÓGICA DE DATOS ---
-const groupDataByTime = (surveys, groupBy) => {
-  return surveys.reduce((acc, survey) => {
-    let key;
-    if (groupBy === 'day') key = format(new Date(survey.created_at), 'yyyy-MM-dd');
-    if (groupBy === 'month') key = format(new Date(survey.created_at), 'yyyy-MM');
-    if (groupBy === 'year') key = format(new Date(survey.created_at), 'yyyy');
-    
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(survey);
-    return acc;
-  }, {});
-};
+function calculateNps(data) {
+  if (!data || data.length === 0) return 0;
+  const promoters = data.filter(s => s.score >= 9).length;
+  const detractors = data.filter(s => s.score <= 6).length;
+  return Math.round(((promoters - detractors) / data.length) * 100);
+}
 
 // --- COMPONENTE PRINCIPAL ---
 function App() {
@@ -43,10 +35,7 @@ function App() {
   
   const [locationFilter, setLocationFilter] = useState('Todos');
   const [dateRange, setDateRange] = useState([subDays(new Date(), 30), new Date()]);
-  const [groupBy, setGroupBy] = useState('day');
-
-  // ***** LA CORRECCIÓN ESTÁ EN LA LÍNEA SIGUIENTE *****
-  const [startDate, endDate] = dateRange || [null, null]; // Se añade '|| [null, null]' para evitar el error si dateRange es nulo.
+  const [startDate, endDate] = dateRange || [null, null];
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -69,30 +58,21 @@ function App() {
   const promoters = filteredSurveys.filter(s => s.score >= 9).length;
   const passives = filteredSurveys.filter(s => s.score >= 7 && s.score <= 8).length;
   const detractors = filteredSurveys.filter(s => s.score <= 6).length;
-  const nps = total > 0 ? Math.round(((promoters - detractors) / total) * 100) : 0;
+  const nps = calculateNps(filteredSurveys);
 
-  const groupedData = groupDataByTime(filteredSurveys, groupBy);
-  const chartLabels = Object.keys(groupedData).sort();
+  // Preparación de datos para Recharts
+  const dataByDay = filteredSurveys.reduce((acc, survey) => {
+    const day = format(new Date(survey.created_at), 'yyyy-MM-dd');
+    if (!acc[day]) acc[day] = [];
+    acc[day].push(survey);
+    return acc;
+  }, {});
   
-  const chartData = {
-    labels: chartLabels,
-    datasets: [
-      { type: 'bar', label: 'Detractores', data: chartLabels.map(key => groupedData[key].filter(s => s.score <= 6).length), backgroundColor: '#e74c3c', stack: 'counts' },
-      { type: 'bar', label: 'Pasivos', data: chartLabels.map(key => groupedData[key].filter(s => s.score >= 7 && s.score <= 8).length), backgroundColor: '#f1c40f', stack: 'counts' },
-      { type: 'bar', label: 'Promotores', data: chartLabels.map(key => groupedData[key].filter(s => s.score >= 9).length), backgroundColor: '#2ecc71', stack: 'counts' },
-      { type: 'line', label: 'NPS', data: chartLabels.map(key => calculateNps(groupedData[key])), borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.2)', yAxisID: 'y1' }
-    ],
-  };
+  const evolutionData = Object.keys(dataByDay).sort().map(day => ({
+    name: day,
+    NPS: calculateNps(dataByDay[day]),
+  }));
 
-  const chartOptions = {
-    scales: {
-      x: { stacked: true },
-      y: { stacked: true, beginAtZero: true, position: 'left', title: { display: true, text: 'Nº de Respuestas' } },
-      y1: { type: 'linear', position: 'right', beginAtZero: false, title: { display: true, text: 'Puntaje NPS' }, grid: { drawOnChartArea: false } }
-    },
-    responsive: true,
-  };
-  
   const handleExcelExport = () => {
     const dataToExport = filteredSurveys.map(s => ({
       Fecha: format(new Date(s.created_at), 'dd/MM/yyyy HH:mm'),
@@ -117,7 +97,7 @@ function App() {
         <VStack spacing="6" align="stretch">
           <Heading as="h1" size="lg">Dashboard de Experiencia del Cliente</Heading>
           
-          <HStack bg="white" p="4" borderRadius="lg" borderWidth="1px" spacing="6">
+          <HStack bg="white" p="4" borderRadius="lg" borderWidth="1px" spacing="6" boxShadow="sm">
             <Box>
               <Text fontWeight="bold" mb="2">Ubicación</Text>
               <Select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}>
@@ -150,30 +130,24 @@ function App() {
             <KpiCard title="% Detractores" value={total > 0 ? ((detractors / total) * 100).toFixed(1) : 0} unit="%" />
             <KpiCard title="Total Encuestas" value={total} />
           </SimpleGrid>
-          {/*
-          <Box bg="white" p="4" borderRadius="lg" borderWidth="1px">
-            <HStack mb="4">
-              <Heading as="h3" size="md" flexGrow="1">Análisis de NPS en el Tiempo</Heading>
-              <Select w="auto" value={groupBy} onChange={(e) => setGroupBy(e.target.value)}>
-                <option value="day">Por Día</option>
-                <option value="month">Por Mes</option>
-                <option value="year">Por Año</option>
-              </Select>
-            </HStack>
-            <Chart type='bar' data={chartData} options={chartOptions} />
+
+          <Box bg="white" p="4" borderRadius="lg" borderWidth="1px" h="400px" boxShadow="sm">
+            <Heading as="h3" size="md" mb="4">Evolución del NPS en el Tiempo</Heading>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart data={evolutionData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="NPS" stroke="#3498db" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           </Box>
-          */}
         </VStack>
       </Container>
     </Box>
   );
-}
-
-function calculateNps(data) {
-  if (!data || data.length === 0) return 0;
-  const promoters = data.filter(s => s.score >= 9).length;
-  const detractors = data.filter(s => s.score <= 6).length;
-  return Math.round(((promoters - detractors) / data.length) * 100);
 }
 
 export default App;
