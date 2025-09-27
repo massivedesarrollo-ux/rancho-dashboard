@@ -50,3 +50,47 @@ header h1 { text-align: center; color: #2c3e50; }
 .filters button { padding: 10px 20px; border-radius: 20px; border: 1px solid #ccc; background-color: #fff; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
 .filters button:hover { background-color: #f0f0f0; border-color: #aaa; }
 .filters button.active { background-color: #007bff; color: white; border-color: #007bff; }
+/* --- Estilos para los Nuevos Gráficos de Tendencias --- */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.time-group button {
+  background: #eee;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  margin-left: 0.3rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.time-group button:hover {
+  background: #ddd;
+}
+
+.time-group button.active {
+  background: #2c3e50;
+  color: white;
+}
