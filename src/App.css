@@ -1,12 +1,44 @@
 body { font-family: system-ui, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; }
 .dashboard { max-width: 1200px; margin: 0 auto; padding: 20px; }
 header h1 { text-align: center; color: #2c3e50; }
-.nps-display { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; padding: 20px; margin-bottom: 30px; }
-.nps-display h2 { margin-top: 0; }
-.nps-display .score { font-size: 4rem; font-weight: bold; margin: 0; }
-.nps-display .score.good { color: #2ecc71; }
-.nps-display .score.medium { color: #f39c12; }
-.nps-display .score.bad { color: #e74c3c; }
+/* --- Estilos para las Tarjetas KPI --- */
+.kpi-info {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.kpi-card {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.kpi-card h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.kpi-card .score {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.kpi-card .score.good { color: #2ecc71; }
+.kpi-card .score.medium { color: #f39c12; }
+.kpi-card .score.bad { color: #e74c3c; }
 .chart-container, .comments-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
 .comments-container ul { list-style: none; padding: 0; }
 .comments-container li { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; align-items: flex-start; gap: 15px; }

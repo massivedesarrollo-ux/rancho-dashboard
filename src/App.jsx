@@ -12,13 +12,16 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 function App() {
   const [allSurveys, setAllSurveys] = useState([]);
-  const [nps, setNps] = useState(0);
+  const [locations, setLocations] = useState([]);
   const [locationFilter, setLocationFilter] = useState('Todos');
 
   useEffect(() => {
     const fetchInitialData = async () => {
-      const { data } = await supabase.from('surveys').select('*');
-      setAllSurveys(data || []);
+      // Cargamos tanto las encuestas como las ubicaciones activas
+      const { data: surveysData } = await supabase.from('surveys').select('*');
+      setAllSurveys(surveysData || []);
+      const { data: locationsData } = await supabase.from('locations').select('*').eq('is_active', true).order('name');
+      setLocations(locationsData || []);
     };
     fetchInitialData();
 
@@ -36,17 +39,19 @@ function App() {
     ? allSurveys 
     : allSurveys.filter(s => s.location_id === locationFilter);
 
-  useEffect(() => {
-    const promoters = filteredSurveys.filter(s => s.score >= 9).length;
-    const detractors = filteredSurveys.filter(s => s.score <= 6).length;
-    const total = filteredSurveys.length;
-
-    if (total === 0) setNps(0);
-    else setNps(Math.round(((promoters - detractors) / total) * 100));
-  }, [filteredSurveys]);
-
-  const locations = ['Todos', ...Array.from(new Set(allSurveys.map(s => s.location_id)))];
+  // --- NUEVA SECCIÓN DE CÁLCULOS PARA KPIs ---
+  const total = filteredSurveys.length;
+  const promoters = filteredSurveys.filter(s => s.score >= 9).length;
+  const passives = filteredSurveys.filter(s => s.score >= 7 && s.score <= 8).length;
+  const detractors = filteredSurveys.filter(s => s.score <= 6).length;
   
+  const nps = total > 0 ? Math.round(((promoters - detractors) / total) * 100) : 0;
+  const promotersPercent = total > 0 ? ((promoters / total) * 100).toFixed(1) : 0;
+  const passivesPercent = total > 0 ? ((passives / total) * 100).toFixed(1) : 0;
+  const detractorsPercent = total > 0 ? ((detractors / total) * 100).toFixed(1) : 0;
+  // --- FIN DE LA NUEVA SECCIÓN ---
+
+  // Lógica para el gráfico de barras (sin cambios)
   const scoreCounts = Array(11).fill(0);
   filteredSurveys.forEach(survey => scoreCounts[survey.score]++);
 
@@ -68,17 +73,39 @@ function App() {
       <header><h1>Dashboard de Experiencia del Cliente</h1></header>
       
       <div className="filters">
+        <button onClick={() => setLocationFilter('Todos')} className={locationFilter === 'Todos' ? 'active' : ''}>Todos</button>
+        {/* Ahora los filtros se leen de la tabla 'locations' */}
         {locations.map(location => (
-          <button key={location} className={locationFilter === location ? 'active' : ''} onClick={() => setLocationFilter(location)}>
-            {location}
+          <button key={location.id} className={locationFilter === location.name ? 'active' : ''} onClick={() => setLocationFilter(location.name)}>
+            {location.name}
           </button>
         ))}
       </div>
 
-      <div className="nps-display">
-        <h2>Net Promoter Score (NPS)</h2>
-        <p className={`score ${nps > 50 ? 'good' : nps > 0 ? 'medium' : 'bad'}`}>{nps}</p>
+      {/* --- NUEVA SECCIÓN DE TARJETAS KPI --- */}
+      <div className="kpi-info">
+        <p>Mostrando <strong>{total}</strong> encuestas</p>
       </div>
+      <div className="kpi-grid">
+        <div className="kpi-card">
+          <h2>Puntaje NPS</h2>
+          <p className={`score ${nps > 50 ? 'good' : nps > 0 ? 'medium' : 'bad'}`}>{nps}</p>
+        </div>
+        <div className="kpi-card">
+          <h2>Promotores</h2>
+          <p className="score good">{promotersPercent}%</p>
+        </div>
+        <div className="kpi-card">
+          <h2>Pasivos</h2>
+          <p className="score medium">{passivesPercent}%</p>
+        </div>
+        <div className="kpi-card">
+          <h2>Detractores</h2>
+          <p className="score bad">{detractorsPercent}%</p>
+        </div>
+      </div>
+      {/* --- FIN DE LA NUEVA SECCIÓN --- */}
+
 
       <div className="chart-container">
         <h2>Distribución de Calificaciones</h2>
