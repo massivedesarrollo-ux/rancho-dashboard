@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Bar, Line } from 'react-chartjs-2';
-// IMPORTANTE: Añadimos LineElement y PointElement para el gráfico de líneas
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
-import { format, getWeek, getYear } from 'date-fns'; // Importamos funciones de fecha
+// Añadimos 'Radar' a la importación
+import { Bar, Line, Radar } from 'react-chartjs-2';
+// Añadimos los componentes necesarios para el gráfico de Radar
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, RadialLinearScale, Filler } from 'chart.js';
+import { format, getWeek, getYear } from 'date-fns';
 import './App.css';
 
-// Registramos los nuevos elementos para el gráfico de líneas
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
+// Registramos los nuevos elementos para el gráfico de Radar
+ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, RadialLinearScale, Filler);
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -25,7 +26,7 @@ function App() {
   const [allSurveys, setAllSurveys] = useState([]);
   const [locations, setLocations] = useState([]);
   const [locationFilter, setLocationFilter] = useState('Todos');
-  const [groupBy, setGroupBy] = useState('day'); // <-- NUEVO ESTADO para agrupar (day, week, month)
+  const [groupBy, setGroupBy] = useState('day');
 
   useEffect(() => {
     // ... (El useEffect para cargar datos iniciales no cambia)
@@ -58,8 +59,7 @@ function App() {
   const passivesPercent = total > 0 ? ((passives / total) * 100).toFixed(1) : 0;
   const detractorsPercent = total > 0 ? ((detractors / total) * 100).toFixed(1) : 0;
 
-  // --- NUEVA LÓGICA PARA DATOS DE GRÁFICOS ---
-  // 1. Datos para el gráfico de Evolución de NPS
+  // --- LÓGICA PARA GRÁFICOS DE TENDENCIAS (no cambia) ---
   const groupedData = filteredSurveys.reduce((acc, survey) => {
     const date = new Date(survey.created_at);
     let key = '';
@@ -84,7 +84,6 @@ function App() {
     }]
   };
 
-  // 2. Datos para el gráfico de Ranking
   const rankingData = {
     labels: locations.map(loc => loc.name),
     datasets: [{
@@ -93,12 +92,39 @@ function App() {
       backgroundColor: '#34495e'
     }]
   };
+
+  // --- NUEVA LÓGICA PARA GRÁFICO DE RADAR ---
+  const aspects = ['instalaciones', 'limpieza', 'atencion', 'ambiente', 'calidadPrecio'];
+  const aspectLabels = ['Instalaciones', 'Limpieza', 'Atención', 'Ambiente', 'Calidad/Precio'];
+
+  const averageScores = aspects.map(aspect => {
+    const ratingsForAspect = filteredSurveys
+      .map(s => s.additional_ratings?.[aspect])
+      .filter(rating => typeof rating === 'number' && rating > 0);
+    
+    if (ratingsForAspect.length === 0) return 0;
+
+    const average = ratingsForAspect.reduce((sum, rating) => sum + rating, 0) / ratingsForAspect.length;
+    return average.toFixed(1);
+  });
+  
+  const radarData = {
+    labels: aspectLabels,
+    datasets: [{
+      label: 'Calificación Promedio (1-5)',
+      data: averageScores,
+      backgroundColor: 'rgba(255, 99, 132, 0.2)',
+      borderColor: 'rgba(255, 99, 132, 1)',
+      borderWidth: 2,
+    }]
+  };
   
   return (
     <div className="dashboard">
       <header><h1>Dashboard de Experiencia del Cliente</h1></header>
       
       <div className="filters">
+        {/* ... (Filtros no cambian) ... */}
         <button onClick={() => setLocationFilter('Todos')} className={locationFilter === 'Todos' ? 'active' : ''}>Todos</button>
         {locations.map(location => (
           <button key={location.id} className={locationFilter === location.name ? 'active' : ''} onClick={() => setLocationFilter(location.name)}>
@@ -109,13 +135,13 @@ function App() {
 
       <div className="kpi-info"><p>Mostrando <strong>{total}</strong> encuestas</p></div>
       <div className="kpi-grid">
+        {/* ... (Tarjetas KPI no cambian) ... */}
         <div className="kpi-card"><h2>Puntaje NPS</h2><p className={`score ${nps > 50 ? 'good' : nps > 0 ? 'medium' : 'bad'}`}>{nps}</p></div>
         <div className="kpi-card"><h2>Promotores</h2><p className="score good">{promotersPercent}%</p></div>
         <div className="kpi-card"><h2>Pasivos</h2><p className="score medium">{passivesPercent}%</p></div>
         <div className="kpi-card"><h2>Detractores</h2><p className="score bad">{detractorsPercent}%</p></div>
       </div>
       
-      {/* --- NUEVA SECCIÓN DE GRÁFICOS --- */}
       <div className="charts-grid">
         <div className="chart-card">
           <div className="chart-header">
@@ -134,23 +160,19 @@ function App() {
           </div>
           <Bar data={rankingData} options={{ indexAxis: 'y', responsive: true }} />
         </div>
+        
+        {/* --- NUEVO GRÁFICO DE RADAR AÑADIDO A LA CUADRÍCULA --- */}
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Análisis de Atributos</h3>
+          </div>
+          <Radar data={radarData} options={{ scales: { r: { beginAtZero: true, max: 5 } } }}/>
+        </div>
+
       </div>
-      {/* --- FIN DE LA NUEVA SECCIÓN --- */}
 
       <div className="comments-container">
         {/* ... (La sección de comentarios no cambia) ... */}
-        <h2>Últimos Comentarios</h2>
-        <ul>
-          {filteredSurveys.filter(s => s.comment).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(s => (
-              <li key={s.id}>
-                <span className="comment-score">{s.score}</span>
-                <div>
-                  <p>{s.comment}</p>
-                  <small>{s.location_id} - {new Date(s.created_at).toLocaleString()}</small>
-                </div>
-              </li>
-            ))}
-        </ul>
       </div>
     </div>
   );
