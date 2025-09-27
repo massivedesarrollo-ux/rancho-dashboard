@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Box, Container, VStack, HStack, Text, Stat, SimpleGrid, Select, Button, Heading } from '@chakra-ui/react';
-import { Line, Bar } from 'react-chartjs-2';
+import { Chart } from 'react-chartjs-2';;
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, BarController, LineController } from 'chart.js';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -160,7 +160,7 @@ function App() {
                 <option value="year">Por Año</option>
               </Select>
             </HStack>
-            <Bar data={chartData} options={chartOptions} />
+            <Chart type='bar' data={chartData} options={chartOptions} />
           </Box>
         </VStack>
       </Container>
