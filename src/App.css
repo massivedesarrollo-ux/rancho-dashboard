@@ -94,3 +94,44 @@ header h1 { text-align: center; color: #2c3e50; }
   background: #2c3e50;
   color: white;
 }
+/* --- Estilos para el Mapa de Palabras y Comentarios --- */
+.wordcloud-container {
+  height: 300px;
+  width: 100%;
+}
+
+.wordcloud-container p {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+.comments-container h2 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.comment-card {
+  list-style: none;
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-left: 5px solid; /* Borde para el color de estado */
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+/* Colores para el Feed Inteligente */
+.comment-card.promoter-comment { border-color: #2ecc71; }
+.comment-card.passive-comment { border-color: #f39c12; }
+.comment-card.detractor-comment { border-color: #e74c3c; }
+
+/* Eliminamos los estilos antiguos de 'li' si aún existen */
+.comments-container ul { padding: 0; }
+.comments-container li { border-bottom: none; }

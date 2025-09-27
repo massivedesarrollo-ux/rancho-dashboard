@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-// Añadimos 'Radar' a la importación
 import { Bar, Line, Radar } from 'react-chartjs-2';
-// Añadimos los componentes necesarios para el gráfico de Radar
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, RadialLinearScale, Filler } from 'chart.js';
+import WordCloud from 'react-d3-cloud';
 import { format, getWeek, getYear } from 'date-fns';
 import './App.css';
 
-// Registramos los nuevos elementos para el gráfico de Radar
+// Registramos todos los componentes necesarios para todos los gráficos
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend, RadialLinearScale, Filler);
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -29,7 +28,6 @@ function App() {
   const [groupBy, setGroupBy] = useState('day');
 
   useEffect(() => {
-    // ... (El useEffect para cargar datos iniciales no cambia)
     const fetchInitialData = async () => {
       const { data: surveysData } = await supabase.from('surveys').select('*');
       setAllSurveys(surveysData || []);
@@ -38,9 +36,12 @@ function App() {
     };
     fetchInitialData();
 
-    const channel = supabase.channel('realtime surveys').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'surveys' }, 
+    const channel = supabase
+      .channel('realtime surveys')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'surveys' }, 
         (payload) => setAllSurveys(currentSurveys => [...currentSurveys, payload.new])
-      ).subscribe();
+      )
+      .subscribe();
 
     return () => supabase.removeChannel(channel);
   }, []);
@@ -49,17 +50,18 @@ function App() {
     ? allSurveys 
     : allSurveys.filter(s => s.location_id === locationFilter);
 
-  // --- Cálculos para KPIs (no cambia) ---
+  // --- Cálculos para KPIs ---
   const total = filteredSurveys.length;
   const promoters = filteredSurveys.filter(s => s.score >= 9).length;
   const passives = filteredSurveys.filter(s => s.score >= 7 && s.score <= 8).length;
   const detractors = filteredSurveys.filter(s => s.score <= 6).length;
+  
   const nps = calculateNps(filteredSurveys);
   const promotersPercent = total > 0 ? ((promoters / total) * 100).toFixed(1) : 0;
   const passivesPercent = total > 0 ? ((passives / total) * 100).toFixed(1) : 0;
   const detractorsPercent = total > 0 ? ((detractors / total) * 100).toFixed(1) : 0;
 
-  // --- LÓGICA PARA GRÁFICOS DE TENDENCIAS (no cambia) ---
+  // --- Lógica para Gráfico de Evolución de NPS ---
   const groupedData = filteredSurveys.reduce((acc, survey) => {
     const date = new Date(survey.created_at);
     let key = '';
@@ -84,6 +86,7 @@ function App() {
     }]
   };
 
+  // --- Lógica para Gráfico de Ranking ---
   const rankingData = {
     labels: locations.map(loc => loc.name),
     datasets: [{
@@ -92,8 +95,8 @@ function App() {
       backgroundColor: '#34495e'
     }]
   };
-
-  // --- NUEVA LÓGICA PARA GRÁFICO DE RADAR ---
+  
+  // --- Lógica para Gráfico de Radar ---
   const aspects = ['instalaciones', 'limpieza', 'atencion', 'ambiente', 'calidadPrecio'];
   const aspectLabels = ['Instalaciones', 'Limpieza', 'Atención', 'Ambiente', 'Calidad/Precio'];
 
@@ -118,13 +121,32 @@ function App() {
       borderWidth: 2,
     }]
   };
+
+  // --- Lógica para Mapa de Palabras ---
+  const spanishStopWords = ['de', 'la', 'que', 'el', 'en', 'y', 'a', 'los', 'del', 'se', 'las', 'por', 'un', 'para', 'con', 'no', 'una', 'su', 'al', 'lo', 'como', 'más', 'pero', 'sus', 'le', 'ya', 'o', 'este', 'ha', 'muy', 'sin', 'sobre', 'también', 'me', 'gracias', 'hola'];
+  const text = filteredSurveys.map(s => s.comment).filter(Boolean).join(' ');
+  const words = text.toLowerCase().match(/\b(\w{3,})\b/g) || []; // Solo palabras de 3+ letras
+  const filteredWords = words.filter(word => !spanishStopWords.includes(word));
+  
+  const wordFrequencies = filteredWords.reduce((acc, word) => {
+    acc[word] = (acc[word] || 0) + 1;
+    return acc;
+  }, {});
+
+  const wordcloudData = Object.entries(wordFrequencies).map(([text, value]) => ({ text, value }));
+
+  // --- Función para Estilos de Comentarios ---
+  const getCommentClass = (score) => {
+    if (score >= 9) return 'promoter-comment';
+    if (score <= 6) return 'detractor-comment';
+    return 'passive-comment';
+  };
   
   return (
     <div className="dashboard">
       <header><h1>Dashboard de Experiencia del Cliente</h1></header>
       
       <div className="filters">
-        {/* ... (Filtros no cambian) ... */}
         <button onClick={() => setLocationFilter('Todos')} className={locationFilter === 'Todos' ? 'active' : ''}>Todos</button>
         {locations.map(location => (
           <button key={location.id} className={locationFilter === location.name ? 'active' : ''} onClick={() => setLocationFilter(location.name)}>
@@ -135,7 +157,6 @@ function App() {
 
       <div className="kpi-info"><p>Mostrando <strong>{total}</strong> encuestas</p></div>
       <div className="kpi-grid">
-        {/* ... (Tarjetas KPI no cambian) ... */}
         <div className="kpi-card"><h2>Puntaje NPS</h2><p className={`score ${nps > 50 ? 'good' : nps > 0 ? 'medium' : 'bad'}`}>{nps}</p></div>
         <div className="kpi-card"><h2>Promotores</h2><p className="score good">{promotersPercent}%</p></div>
         <div className="kpi-card"><h2>Pasivos</h2><p className="score medium">{passivesPercent}%</p></div>
@@ -160,19 +181,40 @@ function App() {
           </div>
           <Bar data={rankingData} options={{ indexAxis: 'y', responsive: true }} />
         </div>
-        
-        {/* --- NUEVO GRÁFICO DE RADAR AÑADIDO A LA CUADRÍCULA --- */}
         <div className="chart-card">
           <div className="chart-header">
             <h3>Análisis de Atributos</h3>
           </div>
           <Radar data={radarData} options={{ scales: { r: { beginAtZero: true, max: 5 } } }}/>
         </div>
-
+        <div className="chart-card">
+          <div className="chart-header"><h3>Mapa de Palabras</h3></div>
+          <div className="wordcloud-container">
+            {wordcloudData.length > 0 ? (
+              <WordCloud data={wordcloudData} fontSize={(word) => Math.log2(word.value) * 5 + 16} rotate={() => 0} />
+            ) : (
+              <p>No hay suficientes comentarios para generar un mapa.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="comments-container">
-        {/* ... (La sección de comentarios no cambia) ... */}
+        <h2>La Voz del Cliente</h2>
+        <ul>
+          {filteredSurveys
+            .filter(s => s.comment)
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .map(s => (
+              <li key={s.id} className={`comment-card ${getCommentClass(s.score)}`}>
+                <span className="comment-score">{s.score}</span>
+                <div>
+                  <p>{s.comment}</p>
+                  <small>{s.location_id} - {new Date(s.created_at).toLocaleString()}</small>
+                </div>
+              </li>
+            ))}
+        </ul>
       </div>
     </div>
   );
